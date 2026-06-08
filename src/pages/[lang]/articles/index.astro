@@ -1,0 +1,117 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import type { Lang } from '../../../i18n/ui';
+import { langs, useTranslations } from '../../../i18n/ui';
+import { localizedPath, formatDateShort, getLocaleSlug } from '../../../i18n/utils';
+
+export async function getStaticPaths() {
+  return langs.map((lang) => ({ params: { lang }, props: { lang } }));
+}
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const articles = (await getCollection('articles'))
+  .filter((a) => !a.data.draft && a.id.startsWith(`${lang}/`))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<Base title={t('articles.title')} description={t('articles.description')} lang={lang}>
+  <section class="container page-head rise">
+    <p class="eyebrow">{t('articles.eyebrow')}</p>
+    <h1>{t('articles.title')}</h1>
+    <p class="lead">{t('articles.lead')}</p>
+  </section>
+
+  <section class="container section">
+    <ul class="rows">
+      {
+        articles.map((a) => (
+          <li class="row">
+            <a class="row__link" href={localizedPath(lang, `/articles/${getLocaleSlug(a.id)}`)}>
+              <div class="row__main">
+                <span class="row__title">{a.data.title}</span>
+                <span class="row__summary">{a.data.summary}</span>
+              </div>
+              <span class="meta row__date">{formatDateShort(a.data.date, lang)}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</Base>
+
+<style>
+  .page-head {
+    padding-top: clamp(40px, 6vw, 80px);
+  }
+
+  .page-head h1 {
+    margin-top: var(--space-2);
+  }
+
+  .page-head .lead {
+    margin-top: var(--space-3);
+  }
+
+  .rows {
+    list-style: none;
+    padding: 0;
+    max-width: 860px;
+  }
+
+  .row {
+    border-top: 1px solid var(--border);
+  }
+
+  .row:last-child {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .row__link {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-6);
+    padding-block: var(--space-4);
+    transition: padding-left var(--dur) var(--ease);
+  }
+
+  .row__link:hover {
+    padding-left: var(--space-1);
+  }
+
+  .row__main {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .row__title {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-size: 1.625rem;
+    line-height: 1.25;
+  }
+
+  .row__summary {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    max-width: 52ch;
+  }
+
+  .row__date {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 600px) {
+    .row__link {
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+  }
+</style>

@@ -1,0 +1,33 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Not found" description="This page doesn't exist." lang="fr">
+  <section class="container reading notfound rise">
+    <p class="eyebrow">404</p>
+    <h1>Cette page a disparu.</h1>
+    <p class="lead">
+      La page que vous cherchez n'est pas ici. Elle a peut-être été déplacée, ou n'a jamais existé.
+    </p>
+    <p><a class="link" href="/fr/">← Accueil</a></p>
+  </section>
+</Base>
+
+<style>
+  .notfound {
+    padding-top: var(--space-12);
+  }
+
+  .notfound .eyebrow {
+    margin-bottom: var(--space-2);
+  }
+
+  .notfound h1 {
+    margin-bottom: var(--space-3);
+  }
+
+  .notfound .lead {
+    margin-bottom: var(--space-4);
+    max-width: 44ch;
+  }
+</style>

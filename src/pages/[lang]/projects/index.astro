@@ -1,0 +1,61 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import Thumbnail from '../../../components/Thumbnail.astro';
+import type { Lang } from '../../../i18n/ui';
+import { langs, useTranslations } from '../../../i18n/ui';
+import { localizedPath, getLocaleSlug } from '../../../i18n/utils';
+
+export async function getStaticPaths() {
+  return langs.map((lang) => ({ params: { lang }, props: { lang } }));
+}
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const projects = (await getCollection('projects'))
+  .filter((p) => !p.data.draft && p.id.startsWith(`${lang}/`))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<Base title={t('projects.eyebrow')} description={t('projects.description')} lang={lang}>
+  <section class="container page rise">
+    <p class="eyebrow">{t('projects.eyebrow')}</p>
+    <div class="grid">
+      {
+        projects.map((p) => (
+          <Thumbnail
+            href={localizedPath(lang, `/projects/${getLocaleSlug(p.id)}`)}
+            title={p.data.title}
+            summary={p.data.summary}
+            cover={p.data.cover}
+            coverAlt={p.data.coverAlt}
+            tags={p.data.tags}
+          />
+        ))
+      }
+    </div>
+  </section>
+</Base>
+
+<style>
+  .page {
+    padding-top: clamp(40px, 6vw, 80px);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--grid-gap);
+    row-gap: var(--space-12);
+    margin-top: var(--space-4);
+  }
+
+  @media (max-width: 720px) {
+    .grid {
+      grid-template-columns: 1fr;
+      row-gap: var(--space-8);
+    }
+  }
+</style>

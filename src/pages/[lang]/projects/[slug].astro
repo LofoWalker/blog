@@ -1,0 +1,193 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import type { Lang } from '../../../i18n/ui';
+import { useTranslations } from '../../../i18n/ui';
+import { localizedPath, formatDateShort, getLocaleSlug } from '../../../i18n/utils';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects
+    .filter((p) => !p.data.draft)
+    .map((entry) => {
+      const [locale, slug] = entry.id.split('/');
+      return {
+        params: { lang: locale, slug },
+        props: { entry, lang: locale as Lang },
+      };
+    });
+}
+
+interface Props { entry: Awaited<ReturnType<typeof getCollection<'projects'>>>[number]; lang: Lang }
+const { entry, lang } = Astro.props;
+const { Content } = await render(entry);
+const t = useTranslations(lang);
+const d = entry.data;
+
+const allProjects = await getCollection('projects');
+const altLang = lang === 'fr' ? 'en' : 'fr';
+const twin = allProjects.find(
+  (p) => p.data.translationKey === d.translationKey && p.id.startsWith(`${altLang}/`),
+);
+const altLangUrl = twin
+  ? localizedPath(altLang, `/projects/${getLocaleSlug(twin.id)}`)
+  : localizedPath(altLang, '/projects');
+
+const facts = [
+  { label: t('projects.facts.published'), value: formatDateShort(d.date, lang) },
+  d.role && { label: t('projects.facts.role'), value: d.role },
+  d.timeline && { label: t('projects.facts.timeline'), value: d.timeline },
+  d.tools.length > 0 && { label: t('projects.facts.tools'), value: d.tools.join(', ') },
+].filter(Boolean) as { label: string; value: string }[];
+---
+
+<Base title={d.title} description={d.summary} lang={lang} altLangUrl={altLangUrl}>
+  <article>
+    <header class="container article-head rise">
+      <a class="meta back" href={localizedPath(lang, '/projects')}>{t('projects.back')}</a>
+      <p class="eyebrow">{t('projects.caseStudy')}</p>
+      <h1 class="article-title">{d.title}</h1>
+      <p class="lead article-summary">{d.summary}</p>
+      {
+        d.tags.length > 0 && (
+          <div class="article-tags">
+            {d.tags.map((tag) => (
+              <span class="label">{tag}</span>
+            ))}
+          </div>
+        )
+      }
+    </header>
+
+    <div class="container article-cover">
+      {
+        d.cover ? (
+          <img src={d.cover} alt={d.coverAlt ?? d.title} loading="eager" />
+        ) : (
+          <div class="cover-placeholder" aria-hidden="true">
+            <span>{d.title.charAt(0)}</span>
+          </div>
+        )
+      }
+    </div>
+
+    <div class="container">
+      <div class="facts">
+        <dl class="facts__grid">
+          {
+            facts.map((f) => (
+              <div class="fact">
+                <dt class="eyebrow">{f.label}</dt>
+                <dd class="fact__value">{f.value}</dd>
+              </div>
+            ))
+          }
+        </dl>
+        {
+          d.link && (
+            <a class="btn btn--primary facts__cta" href={d.link} rel="noopener">
+              {t('projects.visit')}
+            </a>
+          )
+        }
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="reading prose section">
+        <Content />
+      </div>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .article-head {
+    padding-top: var(--space-6);
+  }
+
+  .back {
+    display: inline-block;
+    margin-bottom: var(--space-6);
+    transition: color var(--dur) var(--ease);
+  }
+
+  .back:hover {
+    color: var(--text);
+  }
+
+  .article-head .eyebrow {
+    margin-bottom: var(--space-2);
+  }
+
+  .article-title {
+    max-width: 18ch;
+  }
+
+  .article-summary {
+    margin-top: var(--space-3);
+    max-width: 56ch;
+  }
+
+  .article-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: var(--space-4);
+  }
+
+  .article-cover {
+    margin-top: var(--space-8);
+  }
+
+  .article-cover img,
+  .cover-placeholder {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: var(--radius);
+  }
+
+  .cover-placeholder {
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #dddfd6, #cfd2c6);
+  }
+
+  .cover-placeholder span {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-size: 6rem;
+    color: var(--accent);
+    opacity: 0.5;
+  }
+
+  .facts {
+    margin-top: var(--space-6);
+    padding: var(--space-4);
+    background: var(--surface);
+    border-radius: var(--radius);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .facts__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, auto));
+    gap: var(--space-4) var(--space-8);
+    margin: 0;
+  }
+
+  .fact__value {
+    margin: 4px 0 0;
+    font-size: 1rem;
+    color: var(--text);
+  }
+
+  .facts__cta {
+    flex-shrink: 0;
+  }
+</style>

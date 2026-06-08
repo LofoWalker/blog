@@ -1,0 +1,62 @@
+---
+import '../styles/global.css';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import type { Lang } from '../i18n/ui';
+import { swapLang } from '../i18n/utils';
+
+interface Props {
+  title: string;
+  description?: string;
+  lang: Lang;
+  altLangUrl?: string;
+}
+
+const {
+  title,
+  description = 'Tom Walker — software engineer. Projects, case studies and writing.',
+  lang,
+  altLangUrl,
+} = Astro.props;
+
+const fullTitle = title === 'Tom Walker' ? title : `${title} — Tom Walker`;
+const computedAltLangUrl = altLangUrl ?? swapLang(Astro.url.pathname, lang);
+const ogLocale = lang === 'fr' ? 'fr_FR' : 'en_US';
+const altLang = lang === 'fr' ? 'en' : 'fr';
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:locale:alternate" content={altLang === 'fr' ? 'fr_FR' : 'en_US'} />
+
+    <link rel="alternate" hreflang={lang} href={`https://tomwalker.dev${Astro.url.pathname}`} />
+    <link rel="alternate" hreflang={altLang} href={`https://tomwalker.dev${computedAltLangUrl}`} />
+    <link rel="alternate" hreflang="x-default" href="https://tomwalker.dev/fr/" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Karla:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <Nav lang={lang} altLangUrl={computedAltLangUrl} />
+    <main>
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

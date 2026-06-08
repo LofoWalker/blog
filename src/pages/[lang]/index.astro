@@ -1,0 +1,245 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Thumbnail from '../../components/Thumbnail.astro';
+import type { Lang } from '../../i18n/ui';
+import { langs, useTranslations } from '../../i18n/ui';
+import { localizedPath, formatDateShort, getLocaleSlug, checkTranslationParity } from '../../i18n/utils';
+
+export async function getStaticPaths() {
+  const allArticles = await getCollection('articles');
+  const allProjects = await getCollection('projects');
+  checkTranslationParity(allArticles, 'articles');
+  checkTranslationParity(allProjects, 'projects');
+  return langs.map((lang) => ({ params: { lang }, props: { lang } }));
+}
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+
+const published = <T extends { data: { draft: boolean; date: Date } }>(a: T[]) =>
+  a.filter((e) => !e.data.draft).sort((x, y) => y.data.date.valueOf() - x.data.date.valueOf());
+
+const allProjects = await getCollection('projects');
+const allArticles = await getCollection('articles');
+
+const projects = published(allProjects.filter((p) => p.id.startsWith(`${lang}/`)));
+const articles = published(allArticles.filter((a) => a.id.startsWith(`${lang}/`))).slice(0, 3);
+---
+
+<Base title="Tom Walker" lang={lang}>
+  <section class="container hero rise">
+    <p class="eyebrow">{t('home.eyebrow')}</p>
+    <h1 class="hero__title">{t('home.hero')}</h1>
+    <p class="lead hero__lead">{t('home.lead')}</p>
+    <div class="hero__actions">
+      <a class="btn btn--primary" href={localizedPath(lang, '/projects')}>{t('home.cta')}</a>
+    </div>
+  </section>
+
+  <section class="container section">
+    <header class="block-head">
+      <h2>{t('home.recentWork')}</h2>
+      <div class="block-head__right">
+        <button class="carousel__btn" id="work-prev" aria-label={t('home.prevProject')} disabled>←</button>
+        <button class="carousel__btn" id="work-next" aria-label={t('home.nextProject')}>→</button>
+        <a class="link" href={localizedPath(lang, '/projects')}>{t('home.allProjects')}</a>
+      </div>
+    </header>
+    <div class="carousel" id="work-carousel">
+      {
+        projects.map((p) => (
+          <div class="carousel__slide">
+            <Thumbnail
+              href={localizedPath(lang, `/projects/${getLocaleSlug(p.id)}`)}
+              title={p.data.title}
+              summary={p.data.summary}
+              cover={p.data.cover}
+              coverAlt={p.data.coverAlt}
+              tags={p.data.tags}
+            />
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="container section">
+    <header class="block-head">
+      <h2>{t('home.writing')}</h2>
+      <a class="link" href={localizedPath(lang, '/articles')}>{t('home.allArticles')}</a>
+    </header>
+    <ul class="rows">
+      {
+        articles.map((a) => (
+          <li class="row">
+            <a class="row__link" href={localizedPath(lang, `/articles/${getLocaleSlug(a.id)}`)}>
+              <span class="row__title">{a.data.title}</span>
+              <span class="meta row__date">{formatDateShort(a.data.date, lang)}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <script>
+    const carousel = document.getElementById('work-carousel') as HTMLElement;
+    const prev = document.getElementById('work-prev') as HTMLButtonElement;
+    const next = document.getElementById('work-next') as HTMLButtonElement;
+
+    function slideWidth(): number {
+      const slide = carousel.querySelector('.carousel__slide') as HTMLElement;
+      const gap = parseInt(getComputedStyle(carousel).gap) || 0;
+      return slide.offsetWidth + gap;
+    }
+
+    function sync() {
+      const maxScroll = carousel.scrollWidth - carousel.clientWidth;
+      prev.disabled = carousel.scrollLeft <= 0;
+      next.disabled = carousel.scrollLeft >= maxScroll - 1;
+    }
+
+    prev.addEventListener('click', () =>
+      carousel.scrollBy({ left: -slideWidth(), behavior: 'smooth' }),
+    );
+    next.addEventListener('click', () =>
+      carousel.scrollBy({ left: slideWidth(), behavior: 'smooth' }),
+    );
+
+    carousel.addEventListener('scroll', sync, { passive: true });
+    sync();
+  </script>
+</Base>
+
+<style>
+  .hero {
+    padding-top: clamp(48px, 7vw, 96px);
+  }
+
+  .hero__title {
+    max-width: 16ch;
+    margin-top: var(--space-3);
+  }
+
+  .hero__lead {
+    max-width: 52ch;
+    margin-top: var(--space-4);
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-6);
+  }
+
+  .block-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+  }
+
+  .block-head__right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .carousel {
+    display: flex;
+    gap: var(--grid-gap);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .carousel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .carousel__slide {
+    flex: 0 0 calc((100% - 2 * var(--grid-gap)) / 3);
+    scroll-snap-align: start;
+  }
+
+  .carousel__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-size: 1rem;
+    cursor: pointer;
+    transition:
+      background var(--dur) var(--ease),
+      color var(--dur) var(--ease);
+  }
+
+  .carousel__btn:hover:not(:disabled) {
+    background: var(--text);
+    color: var(--bg);
+  }
+
+  .carousel__btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 900px) {
+    .carousel__slide {
+      flex: 0 0 calc((100% - var(--grid-gap)) / 2);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .carousel__slide {
+      flex: 0 0 85%;
+    }
+  }
+
+  .rows {
+    list-style: none;
+    padding: 0;
+  }
+
+  .row {
+    border-top: 1px solid var(--border);
+  }
+
+  .row:last-child {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .row__link {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-block: var(--space-3);
+    transition: padding-left var(--dur) var(--ease);
+  }
+
+  .row__link:hover {
+    padding-left: var(--space-1);
+  }
+
+  .row__title {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-size: 1.5rem;
+    line-height: 1.3;
+  }
+
+  .row__date {
+    flex-shrink: 0;
+  }
+</style>

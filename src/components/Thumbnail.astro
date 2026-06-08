@@ -1,0 +1,146 @@
+---
+interface Props {
+  href: string;
+  title: string;
+  summary: string;
+  cover?: string;
+  coverAlt?: string;
+  tags?: string[];
+}
+
+const { href, title, summary, cover, coverAlt, tags = [] } = Astro.props;
+---
+
+<a class="thumb" href={href}>
+  <div class="thumb__cover">
+    {
+      cover ? (
+        <img src={cover} alt={coverAlt ?? title} loading="lazy" />
+      ) : (
+        <div class="thumb__placeholder" aria-hidden="true">
+          <span>{title.charAt(0)}</span>
+        </div>
+      )
+    }
+    <div class="thumb__body">
+      {
+        tags.length > 0 && (
+          <div class="thumb__tags">
+            {tags.slice(0, 3).map((t) => (
+              <span class="thumb__tag">{t}</span>
+            ))}
+          </div>
+        )
+      }
+      <h3 class="thumb__title">{title}</h3>
+      <p class="thumb__subtitle">{summary}</p>
+    </div>
+  </div>
+</a>
+
+<style>
+  .thumb {
+    display: block;
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .thumb__cover {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--surface);
+    border-radius: var(--radius);
+  }
+
+  .thumb__cover img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    transition:
+      transform 400ms var(--ease),
+      opacity var(--dur) var(--ease);
+  }
+
+  .thumb:hover .thumb__cover img {
+    transform: scale(1.04);
+    opacity: 0.88;
+  }
+
+  .thumb__placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--accent) 0%, #33392a 100%);
+    z-index: 0;
+  }
+
+  .thumb__placeholder span {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-size: 5rem;
+    color: var(--bg);
+    opacity: 0.25;
+  }
+
+  .thumb__body {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: var(--space-3);
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.72) 0%,
+      rgba(0, 0, 0, 0.18) 55%,
+      transparent 100%
+    );
+    transition: background var(--dur) var(--ease);
+  }
+
+  .thumb:hover .thumb__body {
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.82) 0%,
+      rgba(0, 0, 0, 0.28) 60%,
+      transparent 100%
+    );
+  }
+
+  .thumb__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: var(--space-2);
+  }
+
+  .thumb__tag {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+  }
+
+  .thumb__title {
+    font-size: clamp(1.375rem, 2vw, 1.75rem);
+    line-height: 1.2;
+    color: #fff;
+  }
+
+  .thumb__subtitle {
+    margin-top: var(--space-1);
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 44ch;
+  }
+</style>

@@ -1,0 +1,52 @@
+---
+const year = new Date().getFullYear();
+const social = [
+  { href: 'https://github.com/LofoWalker', label: 'GitHub' },
+  { href: 'https://www.linkedin.com/in/tom-walker-621b8511a/', label: 'LinkedIn'},
+  { href: 'mailto:tom1997walker@gmail.com', label: 'Email' },
+];
+---
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <p class="meta">© {year} - Tom Walker</p>
+    <nav class="footer__links" aria-label="Social">
+      {
+        social.map((s) => (
+          <a class="meta footer__link" href={s.href} rel="me noopener">
+            {s.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    margin-top: var(--space-16);
+    padding-block: var(--space-6);
+    border-top: 1px solid var(--border);
+  }
+
+  .footer__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+
+  .footer__links {
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  .footer__link {
+    transition: color var(--dur) var(--ease);
+  }
+
+  .footer__link:hover {
+    color: var(--text);
+  }
+</style>
