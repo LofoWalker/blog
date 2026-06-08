@@ -1,6 +1,6 @@
 ---
 title: "MyCraft"
-summary: "Minecraft has been running on a single core since 2009. I wanted to know what it would be like to rebuild a voxel engine from scratch — in Java, with an ECS architecture and parallelism as a starting constraint."
+summary: "Minecraft has been running on a single core since 2009. I wanted to know what it would be like to rebuild a voxel engine from scratch, in Java, with an ECS architecture and parallelism as a starting constraint."
 cover: "/mycraft.webp"
 date: 2026-06-01
 translationKey: "mycraft"
@@ -21,7 +21,7 @@ Put like that, it sounds obvious. The game manages a huge world, thousands of bl
 
 So I dug in. I thought I'd run into two or three old technical choices, convince myself a modern rewrite would fix things, and move on. Obviously, it was more complicated than that.
 
-Because before you talk about threads or performance, you need to understand how the game is built. And there, one detail suddenly takes on its full meaning: Minecraft was born in 2009. Different machines, different constraints, different expectations. The game grew around a huge simulation loop that updates the world continuously — every tick, it goes back over the blocks, the entities, the fluids, and starts again.
+Because before you talk about threads or performance, you need to understand how the game is built. And there, one detail suddenly takes on its full meaning: Minecraft was born in 2009. Different machines, different constraints, different expectations. The game grew around a huge simulation loop that updates the world continuously: every tick, it goes back over the blocks, the entities, the fluids, and starts again.
 
 The more I looked at that loop, the more I understood why multithreading was no miracle solution. The problem isn't launching several threads. It's knowing what you're going to make them do.
 
@@ -31,7 +31,7 @@ That's roughly when I realised I was tackling the wrong problem.
 
 My first reflex, like everyone's, had been to look for a place to slot threads in. When something is slow, you look at the resources you've got and tell yourself you just need to use them better. Except a thread isn't an architectural solution. It's an accelerator. And accelerating a badly organised system is mostly a good way to hit the wall faster.
 
-The way Minecraft works rests on this big loop that keeps coming back to the same data, sometimes in a very specific order. Throwing threads at that doesn't simplify anything — it just piles complexity on top of something that already has plenty.
+The way Minecraft works rests on this big loop that keeps coming back to the same data, sometimes in a very specific order. Throwing threads at that doesn't simplify anything; it just piles complexity on top of something that already has plenty.
 
 And that's when I came back to ECS.
 
@@ -80,7 +80,7 @@ All of a sudden, our game architecture looks more like this matrix:
 
 The movement system (`MovementSystem`) only does movement: it takes all entities that have a position and a velocity, and does its calculation. The explosion system only handles countdowns. It's almost SOLID principles pushed to the extreme, applied to video games.
 
-Each piece becomes simpler to understand, easier to evolve, and — incidentally — easier to make run in parallel when you actually need to. ECS doesn't solve multithreading by magic. It solves the question that comes before it: how do you stop every system from quietly depending on everything else?
+Each piece becomes simpler to understand, easier to evolve, and, incidentally, easier to make run in parallel when you actually need to. ECS doesn't solve multithreading by magic. It solves the question that comes before it: how do you stop every system from quietly depending on everything else?
 
 At that point, I also started laughing at myself. The starting idea was, “I'm going to optimise Minecraft with threads.” And a few hours later, here I was telling myself I was going to rebuild a full voxel engine. Not exactly the most cost-effective solution if the goal was just to squeeze out a few FPS.
 
@@ -88,9 +88,9 @@ At that point, I also started laughing at myself. The starting idea was, “I'm 
 
 This is usually the moment where a dev does what devs love doing: opening an empty project and convincing themselves that this time, it'll be done properly. I didn't escape it.
 
-Not with the idea of competing with Minecraft, mind you — let's be serious. More like setting up a small personal lab to test these concepts and see how far they hold up once they're confronted with reality.
+Not with the idea of competing with Minecraft, mind you; let's be serious. More like setting up a small personal lab to test these concepts and see how far they hold up once they're confronted with reality.
 
-I called it “mycraft”. Not the most original name in the world, I know, but at least it's honest. The world clearly didn't need another Minecraft clone — there's already Minecraft, and dozens of similar projects carried by people far more patient than me. But that's not the point. The goal isn't to ship a game. It's to scratch that very particular itch we all have: “what if I rebuilt it myself, just to understand?”
+I called it “mycraft”. Not the most original name in the world, I know, but at least it's honest. The world clearly didn't need another Minecraft clone: there's already Minecraft, and dozens of similar projects carried by people far more patient than me. But that's not the point. The goal isn't to ship a game. It's to scratch that very particular itch we all have: “what if I rebuilt it myself, just to understand?”
 
 ## A black window to start with
 
@@ -100,17 +100,17 @@ The first step was almost symbolic: displaying an OpenGL window. From the outsid
 
 Then came the heart of the engine: a minimalist ECS. No inheritance, no catch-all objects. An entity is an identifier, components hold the data, systems hold the logic. Nothing magical, but a solid foundation.
 
-Then everything snowballed: the components, the game loop, the camera, a minimal OpenGL render, an FPS controller. First a cube. Then a camera. Then a player freely moving around. And at some point, without really noticing, you're no longer doing 3D rendering — you're starting to build a world.
+Then everything snowballed: the components, the game loop, the camera, a minimal OpenGL render, an FPS controller. First a cube. Then a camera. Then a player freely moving around. And at some point, without really noticing, you're no longer doing 3D rendering: you're starting to build a world.
 
 I added voxels, a first chunk, then a meshing system to remove the faces you can't see. Then procedural generation based on noise to give the terrain a bit of relief. And there, something strange happens: you start walking through a world that didn't exist a second earlier.
 
 It's genuinely satisfying. The kind of satisfaction that wipes out the three previous evenings spent staring at a black screen because a projection matrix was multiplied in the wrong order. Anyone who's ever touched 3D knows the famous “Where the hell did my triangle go?” syndrome. You accidentally flipped the Z axis, your camera is looking backwards, and your world is generating itself entirely behind you while you stare into the void. But when everything lines up and your first landscape of blocks appears correctly, the effort is worth it.
 
-The rest followed naturally: gravity, collisions, jumping. And there, I finally had something that looked like a real playable prototype — a character that walks, jumps, and interacts with a generated world.
+The rest followed naturally: gravity, collisions, jumping. And there, I finally had something that looked like a real playable prototype: a character that walks, jumps, and interacts with a generated world.
 
 ## So what about multithreading?
 
-The funniest part of the story is that multithreading — the original question — still isn't there. Or rather, it's deliberately absent.
+The funniest part of the story is that multithreading, the original question, still isn't there. Or rather, it's deliberately absent.
 
 Because as I went along, I realised something dead simple: parallelising a badly structured system is mostly an excellent way to make its bugs faster. Before thinking about virtual threads, async generation, or background meshing, I wanted to make sure the foundation could stand on its own first. That the ECS was in good shape. That responsibilities were clear. That the world had a structure you can actually understand.
 
